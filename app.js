@@ -148,6 +148,9 @@ function stopNoise() {
 }
 
 /* ---------- テスト音（周波数マッチング用） ---------- */
+const TONE_MAX_SEC = 15; // 聴覚疲労防止のため自動停止
+let toneAutoStopId = null;
+
 function startTone() {
   ensureCtx();
   if (ctx.state === "suspended") ctx.resume();
@@ -162,9 +165,12 @@ function startTone() {
   toneOsc.start();
   state.tonePlaying = true;
   document.getElementById("toneBtn").classList.add("active");
+  clearTimeout(toneAutoStopId);
+  toneAutoStopId = setTimeout(stopTone, TONE_MAX_SEC * 1000);
 }
 
 function stopTone() {
+  clearTimeout(toneAutoStopId);
   if (toneOsc) {
     const osc = toneOsc;
     toneOsc = null;

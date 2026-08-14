@@ -1,4 +1,4 @@
-const CACHE = "shizumari-v1";
+const CACHE = "shizumari-v2";
 const ASSETS = ["./", "index.html", "app.js", "manifest.webmanifest", "icon-180.png", "icon-512.png"];
 
 self.addEventListener("install", e => {

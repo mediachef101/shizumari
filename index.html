@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1420">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>しずまり — 耳鳴りサポート</title>
+<style>
+  :root {
+    --bg: #0f1420;
+    --card: #1a2233;
+    --card-border: #263048;
+    --text: #e8ecf4;
+    --muted: #8b96ad;
+    --accent: #5eead4;
+    --accent-dim: #2dd4bf33;
+    --danger: #f87171;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  header { text-align: center; padding: 12px 0 20px; }
+  header h1 { font-size: 22px; font-weight: 600; letter-spacing: .08em; }
+  header p { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .card h2 { font-size: 14px; font-weight: 600; color: var(--muted); letter-spacing: .05em; margin-bottom: 14px; }
+  .row { display: flex; gap: 8px; }
+  button {
+    font-family: inherit;
+    font-size: 14px;
+    border: 1px solid var(--card-border);
+    background: #222c42;
+    color: var(--text);
+    border-radius: 12px;
+    padding: 12px 8px;
+    flex: 1;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  button.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  button:active { opacity: .8; }
+  #playBtn {
+    width: 100%;
+    padding: 16px;
+    font-size: 17px;
+    font-weight: 600;
+    border-radius: 14px;
+    background: var(--accent);
+    color: #06281f;
+    border: none;
+    margin-top: 14px;
+  }
+  #playBtn.playing { background: #334155; color: var(--text); }
+  .slider-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  .slider-row .label { font-size: 12px; color: var(--muted); width: 3.5em; }
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: #2b3650;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    box-shadow: 0 2px 6px #0008;
+  }
+  .freq-display {
+    text-align: center;
+    font-size: 34px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 300;
+    margin: 8px 0 2px;
+  }
+  .freq-display small { font-size: 15px; color: var(--muted); }
+  .fine-row { display: flex; gap: 8px; margin-top: 10px; }
+  .fine-row button { font-size: 13px; padding: 10px 4px; }
+  .toggle-row { display: flex; justify-content: space-between; align-items: center; }
+  .toggle-row .desc { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .switch { position: relative; width: 52px; height: 32px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch span {
+    position: absolute; inset: 0;
+    background: #2b3650;
+    border-radius: 16px;
+    transition: background .2s;
+  }
+  .switch span::before {
+    content: "";
+    position: absolute;
+    width: 26px; height: 26px;
+    left: 3px; top: 3px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform .2s;
+  }
+  .switch input:checked + span { background: var(--accent); }
+  .switch input:checked + span::before { transform: translateX(20px); }
+  #timerStatus { text-align: center; color: var(--accent); font-size: 14px; margin-top: 12px; min-height: 1.2em; font-variant-numeric: tabular-nums; }
+  .note { font-size: 11px; color: var(--muted); line-height: 1.6; margin-top: 4px; }
+  footer { text-align: center; color: #4a5468; font-size: 10px; line-height: 1.6; padding-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>しずまり</h1>
+  <p>耳鳴りサポート・サウンドセラピー</p>
+</header>
+
+<div class="card">
+  <h2>サウンド</h2>
+  <div class="row" id="noiseTypes">
+    <button data-type="white">ホワイト</button>
+    <button data-type="pink" class="active">ピンク</button>
+    <button data-type="brown">ブラウン</button>
+    <button data-type="rain">雨音風</button>
+  </div>
+  <div class="slider-row">
+    <span class="label">音量</span>
+    <input type="range" id="volume" min="0" max="100" value="50">
+  </div>
+  <button id="playBtn">▶ 再生</button>
+</div>
+
+<div class="card">
+  <h2>耳鳴り周波数マッチング</h2>
+  <div class="freq-display"><span id="freqValue">4000</span> <small>Hz</small></div>
+  <div class="slider-row">
+    <span class="label">低い</span>
+    <input type="range" id="freqSlider" min="0" max="1000" value="620">
+    <span class="label" style="text-align:right">高い</span>
+  </div>
+  <div class="fine-row">
+    <button id="fineDown">− 細かく</button>
+    <button id="toneBtn">🔊 テスト音</button>
+    <button id="fineUp">＋ 細かく</button>
+  </div>
+  <p class="note">スライダーを動かして，ご自身の耳鳴りに最も近い高さの音を探してください．見つけた周波数はノッチ療法に使われます．</p>
+</div>
+
+<div class="card">
+  <h2>ノッチ音響療法</h2>
+  <div class="toggle-row">
+    <div>
+      <div>ノッチフィルタを適用</div>
+      <div class="desc">上で合わせた周波数の帯域を除いたノイズを再生します．毎日1〜2時間，数週間の継続で耳鳴りの知覚軽減が報告されている手法です．</div>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="notchToggle">
+      <span></span>
+    </label>
+  </div>
+</div>
+
+<div class="card">
+  <h2>スリープタイマー</h2>
+  <div class="row" id="timerBtns">
+    <button data-min="15">15分</button>
+    <button data-min="30">30分</button>
+    <button data-min="60">60分</button>
+    <button data-min="0">オフ</button>
+  </div>
+  <div id="timerStatus"></div>
+  <p class="note">終了前の2分間で音量がゆっくり下がって停止します．</p>
+</div>
+
+<footer>
+  本アプリは医療機器ではありません．耳鳴りが続く場合は耳鼻咽喉科の受診をおすすめします．<br>
+  ヘッドフォン使用時は小さめの音量から始めてください．
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
